@@ -46,25 +46,33 @@
 #                 f4.write(address)
 #                 f4.write("\n")
                 
-      
+# here we store our data in csv file but different not a one table.
+
+
 import scrapy
+import csv
+from scrapy import Request,Spider
+from uuid import uuid4
 
-class SchoolSpider(scrapy.Spider):
-    name = "school"
-    start_urls = ('https://nwcmc.gov.in/ptsearch_data.php?colony=206&houseno=&name=&address=&serno=',)
+class colony_data(scrapy.Spider):
+    name="colony_data"
 
-    def parse_products(self, response):
-        
-        products =self.xpath('/html/body/table/tbody')
-        
-        for p in products[1:]:
+    def start_requests(self):
+        yield Request('https://nwcmc.gov.in/ptsearch_data.php?colony=206&houseno=&name=&address=&serno=',
+        meta={'cookiejar':str(uuid4)},
+        callback=self.get_colonies)
+
+    def get_colonies(self,response):
+    
+        table=response.xpath('/html/body/table')
+        with open('colony_data.csv','w') as f:
+            wr=csv.writer(f)
+            for tr in table.xpath('.//tr'):
+                _tdata=[]
             
-            item = dict()
-            item['sr_no'] = p.xpath('/html/body/table//tr/td[1]/div/span/text()').extract()
-            item['pincode'] = p.xpath('/html/body/table//tr/td/div/div/a/text()').extract()
-            item['service_no'] = p.xpath('/html/body/table//tr/td[3]/div/text()').extract()
-            item['name'] = p.xpath('/html/body/table//tr/td[4]/div/div/text()').extract()
-            item['address'] = p.xpath('/html/body/table//tr/td[5]/div/span/text()').extract()
-            print(item,"*************************************************************************")
+                for td in tr.xpath('.//td'):
+                    _text=''.join([a for a in td.xpath('.//text()').extract()])
+                    _tdata.append(_text)
+                wr.writerow(_tdata)
             
-            yield item
+# here we store our data in table formet in csv file.
